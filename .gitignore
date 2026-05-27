@@ -4,6 +4,7 @@ __pycache__/
 venv/
 .env
 *.log
+screenshots/
 data/uploads/*
 data/chroma/*
 !data/uploads/.gitkeep

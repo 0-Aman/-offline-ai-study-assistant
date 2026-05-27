@@ -1,6 +1,7 @@
 from pathlib import Path
 from uuid import uuid4
 
+from pptx import Presentation
 from pypdf import PdfReader
 
 
@@ -38,4 +39,17 @@ def load_text(path: Path) -> list[dict]:
     if suffix in {".txt", ".md"}:
         return [{"text": path.read_text(encoding="utf-8", errors="ignore"), "page": None}]
 
-    raise ValueError("Only PDF, TXT, and Markdown files are supported.")
+    if suffix == ".pptx":
+        presentation = Presentation(str(path))
+        slides = []
+        for index, slide in enumerate(presentation.slides, start=1):
+            text_parts = []
+            for shape in slide.shapes:
+                if hasattr(shape, "text") and shape.text.strip():
+                    text_parts.append(shape.text.strip())
+            slide_text = "\n".join(text_parts)
+            if slide_text.strip():
+                slides.append({"text": slide_text, "page": index})
+        return slides
+
+    raise ValueError("Only PDF, PPTX, TXT, and Markdown files are supported.")

@@ -35,7 +35,7 @@ def api_error_message(response: requests.Response) -> str:
 
 with st.sidebar:
     st.header("Study Material")
-    uploaded_file = st.file_uploader("Upload PDF, TXT, or Markdown", type=["pdf", "txt", "md"])
+    uploaded_file = st.file_uploader("Upload PDF, PPTX, TXT, or Markdown", type=["pdf", "pptx", "txt", "md"])
     if uploaded_file and st.button("Index File", type="primary", use_container_width=True):
         with st.spinner("Reading and indexing material..."):
             files = {"file": (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)}
