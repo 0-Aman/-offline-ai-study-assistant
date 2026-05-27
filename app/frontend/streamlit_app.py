@@ -2,7 +2,8 @@ import requests
 import streamlit as st
 
 
-API_URL = "http://localhost:8000"
+API_URL = "http://127.0.0.1:8000"
+TASK_TIMEOUT_SECONDS = 600
 
 
 st.set_page_config(page_title="Offline AI Study Assistant", page_icon=":books:", layout="wide")
@@ -18,9 +19,18 @@ def api_get(path: str):
 
 
 def api_post(path: str, payload: dict):
-    response = requests.post(f"{API_URL}{path}", json=payload, timeout=180)
-    response.raise_for_status()
+    response = requests.post(f"{API_URL}{path}", json=payload, timeout=TASK_TIMEOUT_SECONDS)
+    if not response.ok:
+        raise RuntimeError(api_error_message(response))
     return response.json()
+
+
+def api_error_message(response: requests.Response) -> str:
+    try:
+        detail = response.json().get("detail")
+    except ValueError:
+        detail = response.text
+    return detail or f"Request failed with status {response.status_code}"
 
 
 with st.sidebar:
@@ -29,12 +39,12 @@ with st.sidebar:
     if uploaded_file and st.button("Index File", type="primary", use_container_width=True):
         with st.spinner("Reading and indexing material..."):
             files = {"file": (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)}
-            response = requests.post(f"{API_URL}/upload", files=files, timeout=300)
+            response = requests.post(f"{API_URL}/upload", files=files, timeout=TASK_TIMEOUT_SECONDS)
             if response.ok:
                 result = response.json()
                 st.success(f"Indexed {result['chunks']} chunks")
             else:
-                st.error(response.json().get("detail", "Upload failed"))
+                st.error(api_error_message(response))
 
     try:
         documents = api_get("/documents")
@@ -90,7 +100,7 @@ with summary_tab:
             try:
                 result = api_post(
                     "/summarize",
-                    {"language": language, "document_id": document_id, "topic": topic or None, "top_k": 8},
+                    {"language": language, "document_id": document_id, "topic": topic or None, "top_k": top_k},
                 )
                 st.write(result["summary"])
             except Exception as exc:
@@ -110,7 +120,7 @@ with quiz_tab:
                         "document_id": document_id,
                         "topic": quiz_topic or None,
                         "number_of_questions": count,
-                        "top_k": 8,
+                        "top_k": top_k,
                     },
                 )
                 st.write(result["quiz"])
@@ -129,7 +139,7 @@ with interview_tab:
                         "language": language,
                         "document_id": document_id,
                         "topic": interview_topic or None,
-                        "top_k": 8,
+                        "top_k": top_k,
                     },
                 )
                 st.write(result["questions"])

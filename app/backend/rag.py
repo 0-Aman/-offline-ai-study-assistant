@@ -3,7 +3,6 @@ from uuid import uuid4
 
 import chromadb
 import ollama
-from chromadb.api.models.Collection import Collection
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from app.backend.storage import CHROMA_DIR, ensure_data_dirs, load_text
@@ -131,10 +130,15 @@ Material:
         return sorted(documents.values(), key=lambda item: item["source"] or "")
 
     def search(self, query: str, document_id: str | None, top_k: int) -> list[dict]:
+        total_chunks = self.collection.count()
+        if total_chunks == 0:
+            return []
+
+        n_results = min(top_k, total_chunks)
         where = {"document_id": document_id} if document_id else None
         result = self.collection.query(
             query_embeddings=[self._embed(query)],
-            n_results=top_k,
+            n_results=n_results,
             where=where,
             include=["documents", "metadatas"],
         )
