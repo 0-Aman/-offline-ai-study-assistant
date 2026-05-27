@@ -77,6 +77,12 @@ uvicorn app.backend.main:app --reload --port 8000
 streamlit run app/frontend/streamlit_app.py
 ```
 
+On Windows, you can also start both services with:
+
+```powershell
+.\run_app.ps1
+```
+
 ## API Endpoints
 
 - `POST /upload` uploads and indexes a study file
